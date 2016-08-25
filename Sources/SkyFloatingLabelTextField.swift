@@ -451,17 +451,39 @@ public class SkyFloatingLabelTextField: UITextField {
     
     // MARK: - UITextField text/placeholder positioning overrides
     
+    private func rectForOverlayViewPosition(position: TextFieldOverlayViewPosition, inBounds bounds: CGRect) -> CGRect {
+        guard self.shouldDisplayOverlayViewForPosition(position) else { return .zero }
+        let rect = position.overalyRectForTextField(self)
+        guard var overalyRect = rect else { return .zero }
+        overalyRect.origin.y = self.titleHeight()
+        overalyRect.size.height = self.labelHeight()
+        return overalyRect
+    }
+    
+    override public func leftViewRectForBounds(bounds: CGRect) -> CGRect {
+        return self.rectForOverlayViewPosition(.Left, inBounds: bounds)
+    }
+    
+    override public func rightViewRectForBounds(bounds: CGRect) -> CGRect {
+        return self.rectForOverlayViewPosition(.Right, inBounds: bounds)
+    }
+    
+    func labelRectInBounds(bounds: CGRect) -> CGRect {
+        var rect = CGRectMake(0, self.titleHeight(), bounds.size.width, self.labelHeight())
+        let rightRect = self.rightViewRectForBounds(bounds)
+        rect.size.width -= rightRect.size.width
+        let leftRect = self.leftViewRectForBounds(bounds)
+        rect.origin.x += leftRect.size.width
+        return rect
+    }
+    
     /** 
     Calculate the rectangle for the textfield when it is not being edited
     - parameter bounds: The current bounds of the field
     - returns: The rectangle that the textfield should render in
     */
     override public func textRectForBounds(bounds: CGRect) -> CGRect {
-        super.textRectForBounds(bounds)
-        let titleHeight = self.titleHeight()
-        let lineHeight = self.selectedLineHeight
-        let rect = CGRectMake(0, titleHeight, bounds.size.width, bounds.size.height - titleHeight - lineHeight)
-        return rect
+        return self.labelRectInBounds(bounds)
     }
     
     /**
@@ -470,10 +492,7 @@ public class SkyFloatingLabelTextField: UITextField {
      - returns: The rectangle that the textfield should render in
      */
     override public func editingRectForBounds(bounds: CGRect) -> CGRect {
-        let titleHeight = self.titleHeight()
-        let lineHeight = self.selectedLineHeight
-        let rect = CGRectMake(0, titleHeight, bounds.size.width, bounds.size.height - titleHeight - lineHeight)
-        return rect
+        return self.labelRectInBounds(bounds)
     }
     
     /**
@@ -482,10 +501,7 @@ public class SkyFloatingLabelTextField: UITextField {
      - returns: The rectangle that the placeholder should render in
      */
     override public func placeholderRectForBounds(bounds: CGRect) -> CGRect {
-        let titleHeight = self.titleHeight()
-        let lineHeight = self.selectedLineHeight
-        let rect = CGRectMake(0, titleHeight, bounds.size.width, bounds.size.height - titleHeight - lineHeight)
-        return rect
+        return self.labelRectInBounds(bounds)
     }
     
     // MARK: - Positioning Overrides
@@ -579,5 +595,33 @@ public class SkyFloatingLabelTextField: UITextField {
             return self.titleFormatter(title)
         }
         return nil
+    }
+    
+    func labelHeight() -> CGFloat {
+        return bounds.size.height - self.titleHeight() - self.selectedLineHeight
+    }
+    
+    private enum TextFieldOverlayViewPosition {
+        case Left
+        case Right
+        
+        func modePropertyForTextField(textField: UITextField) -> UITextFieldViewMode {
+            switch self {
+            case .Left:     return textField.leftViewMode
+            case .Right:    return textField.rightViewMode
+            }
+        }
+        
+        func overalyRectForTextField(textField: UITextField) -> CGRect? {
+            switch self {
+            case .Left:     return textField.leftView?.frame
+            case .Right:    return textField.rightView?.frame
+            }
+        }
+    }
+    
+    private func shouldDisplayOverlayViewForPosition(position: TextFieldOverlayViewPosition) -> Bool {
+        let mode = position.modePropertyForTextField(self)
+        return mode == .Always || (self.editing && mode == .WhileEditing) || (!self.editing && mode == .UnlessEditing)
     }
 }
