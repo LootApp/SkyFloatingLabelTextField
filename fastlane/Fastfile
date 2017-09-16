@@ -36,7 +36,7 @@ platform :ios do
         ensure_git_status_clean
         
         # Increment version
-        increment_version_number(version_number: target_version)  
+        increment_version_number(version_number: target_version, xcproject: 'SkyFloatingLabelTextField')  
         
         # Create Carthage framework
         Actions.sh("cd .. && carthage build --no-skip-current && carthage archive #{FRAMEWORK_NAME}")
