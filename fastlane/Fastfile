@@ -34,7 +34,7 @@ platform :ios do
   
         ensure_git_branch
         ensure_git_status_clean
-        s
+        
         # Create Carthage framework
         Actions.sh("cd .. && carthage build --no-skip-current && carthage archive #{FRAMEWORK_NAME}")
         framework_binary = File.join(File.expand_path('../..', __FILE__),"#{FRAMEWORK_NAME}.framework.zip")
